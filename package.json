@@ -40,9 +40,6 @@
     "endOfLine": "lf"
   },
   "husky": {
-    "hooks": {
-      "pre-commit": "npx prettier --write -c .prettierrc \"src/**/*.{ts,tsx,json,css,scss}\""
-    }
   },
   "browserslist": {
     "production": [
