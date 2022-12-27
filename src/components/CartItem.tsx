@@ -1,42 +1,43 @@
-import { Button, Stack } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import { useShoppingCart } from '../context/ShoppingCartContext';
-import storeItems from '../data/items.json';
 import { formatCurrency } from '../utilities/formatCurrency';
 import React from 'react';
+
 type CartItemProps = {
   id: number;
   quantity: number;
 };
 
+const cellStyles={verticalAlign: 'middle', textAlign: "center"} as any;
+
 export function CartItem({ id, quantity }: CartItemProps) {
-  const { removeFromCart } = useShoppingCart();
-  const item = storeItems.find((i) => i.id === id);
+  const { increaseCartQuantity, decreaseCartQuantity, products } = useShoppingCart();
+  const item = products.find((i) => i.id === id);
   if (item == null) return null;
 
   return (
-    <Stack direction="horizontal" gap={2} className="d-flex align-items-center">
-      <img src={item.imgUrl} style={{ width: '125px', height: '75px', objectFit: 'cover' }} />
-
-      <div className="me-auto">
-        <div>
-          {item.name}{' '}
-          {quantity >= 1 && (
-            <span className="text-muted" style={{ fontSize: '.65rem' }}>
-              {quantity}x
-            </span>
-          )}
-        </div>
-
-        <div className="text-muted" style={{ fontSize: '.75rem' }}>
-          {formatCurrency(item.price)}
-        </div>
-      </div>
-
-      <div> {formatCurrency(item.price * quantity)}</div>
-
-      <Button variant="outline-danger" size="sm" onClick={() => removeFromCart(item.id)}>
-        &times;
-      </Button>
-    </Stack>
+    <tr>
+      <td style={cellStyles}>{item?.category.name}</td>
+      <td style={cellStyles}>{item?.name}</td>
+      <td style={cellStyles}>{quantity}</td>
+      <td style={cellStyles}>{formatCurrency(item.price * quantity)}</td>
+      <td style={{...cellStyles, display:'flex'}}>
+        <Button as='span'
+          className="btn btn-dark"
+          onClick={() => decreaseCartQuantity(item.id)}
+          style={{ width: '36px', height: '36px', lineHeight: '18px', display: 'grid' }}
+        >
+          -
+        </Button>
+        &nbsp;
+        <Button as='span'
+          className="btn btn-light"
+          onClick={() => increaseCartQuantity(item.id)}
+          style={{ width: '36px', height: '36px', lineHeight: '18px', display: 'grid' }}
+        >
+          +
+        </Button>
+      </td>
+    </tr>
   );
 }

@@ -1,7 +1,8 @@
-import { createContext, ReactNode, useContext, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { ShoppingCart } from '../components/ShoppingCart';
 // import { useLocalStorage } from '../hooks/useLocalStorage';
 import React from 'react';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 type ShoppingCartProviderProps = {
   children: ReactNode;
@@ -10,6 +11,19 @@ type ShoppingCartProviderProps = {
 type CartItem = {
   id: number;
   quantity: number;
+};
+
+export type Product = {
+  imgUrl: string;
+  id: number;
+  name: string;
+  category: Category;
+  price: number;
+};
+
+export type Category = {
+  id: string;
+  name: string;
 };
 
 type ShoppingCartContext = {
@@ -21,6 +35,7 @@ type ShoppingCartContext = {
   removeFromCart: (id: number) => void;
   cartQuantity: number;
   cartItems: CartItem[];
+  products: Product[];
 };
 
 const ShoppingCartContext = createContext({} as ShoppingCartContext);
@@ -29,9 +44,22 @@ export function useShoppingCart() {
   return useContext(ShoppingCartContext);
 }
 
+
+
 export function ShoppingCartProvider({ children }: ShoppingCartProviderProps) {
+  const [products, setProducts] = useState<Product[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]); // useLocalStorage<CartItem[]>('shopping-cart', []);
+  const [cartItems, setCartItems] = useLocalStorage<CartItem[]>('shopping-cart', []);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = () => {
+    return fetch('http://localhost:3001/api/products/')
+      .then((response) => response.json())
+      .then((products) => setProducts(products));
+  };
 
   const cartQuantity = cartItems.reduce((quantity, item) => item.quantity + quantity, 0);
 
@@ -91,6 +119,7 @@ export function ShoppingCartProvider({ children }: ShoppingCartProviderProps) {
         cartQuantity,
         openCart,
         closeCart,
+        products
       }}
     >
       {children}
