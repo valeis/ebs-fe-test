@@ -1,8 +1,8 @@
-import { Button, Col, Row, Table } from 'react-bootstrap';
+import { Button, Col, Form, Row, Table } from 'react-bootstrap';
 import { useShoppingCart } from '../context/ShoppingCartContext';
 import { StoreItem } from '../components/StoreItem';
 // import storeItems from '../data/items.json';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 type Product = {
   imgUrl: string;
@@ -17,64 +17,22 @@ type Category = {
   name: string;
 };
 
-function renderTable(products: Product[]) {
+/* function renderTable(products: Product[]) {
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { getItemQuantity, increaseCartQuantity, decreaseCartQuantity, removeFromCart } = useShoppingCart();
+  
 
-  return (
-    <Table striped bordered hover>
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Name</th>
-          <th>Price</th>
-        </tr>
-      </thead>
-      <tbody>
-        {products.map((product) => {
-          const quantity = getItemQuantity(product.id);
-          return (
-            <tr>
-              <td>{product.category.name}</td>
-              <td>{product.name}</td>
-              <td>{product.price}</td>
-              <td>
-                <div className="mt-auto">
-                  {quantity === 0 ? (
-                    <Button className="w-100 btn-secondary " onClick={() => increaseCartQuantity(product.id)}>
-                      Add to Cart
-                    </Button>
-                  ) : (
-                    <div className="d-flex align-items-center flex-column " style={{ gap: '.5rem' }}>
-                      <div className="d-flex align-items-center justify-content-center" style={{ gap: '.5rem' }}>
-                        <Button className="btn btn-dark" onClick={() => decreaseCartQuantity(product.id)}>
-                          -
-                        </Button>
-                        <div>
-                          <span className="fs-3">{quantity}</span>
-                          in cart
-                        </div>
-                        <Button className="btn btn-light" onClick={() => increaseCartQuantity(product.id)}>
-                          +
-                        </Button>
-                      </div>
-                      <Button variant="danger" size="sm" onClick={() => removeFromCart(product.id)}>
-                        Remove
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </Table>
-  );
-}
+  // eslint-disable-next-line react-hooks/rules-of-hook
+
+  return ();
+} */
 
 export function Store() {
   const [products, setProducts] = useState<Product[]>([]);
+
+  //
+  const [selectedCategory, setSelectedCategory] = useState();
+
+  const { getItemQuantity, increaseCartQuantity, decreaseCartQuantity, removeFromCart } = useShoppingCart();
 
   useEffect(() => {
     fetchData();
@@ -86,19 +44,106 @@ export function Store() {
       .then((products) => setProducts(products));
   };
 
+  const [order, setOrder] = useState('asc');
+
+  const sorting = (field) => {
+    if (order === 'asc') {
+      const sorted = [...products].sort((a, b) => (a[field] > b[field] ? 1 : -1));
+      setProducts(sorted);
+      setOrder('desc');
+    }
+    if (order === 'desc') {
+      const sorted = [...products].sort((a, b) => (a[field] < b[field] ? 1 : -1));
+      setProducts(sorted);
+      setOrder('asc');
+    }
+  };
+
+  //
+  function handleCategoryChange(event) {
+    setSelectedCategory(event.target.value);
+  }
+
+  function getFilteredList(){
+    if(!selectedCategory){
+      return products;
+    }
+    return products.filter((item) => item.category.id === selectedCategory);
+  }
+
+  var filteredList = useMemo(getFilteredList, [selectedCategory, products]);
+
+
   return (
     <>
+      <div className="filter-container">
+        <Row>
+          <Col xs={12} md={5}>
+            <div className="d-flex justify-content-start"><b>Filter by Category:</b></div>
+            <div>
+              <Form.Select name="category-list" id="category-list" onChange={handleCategoryChange}>
+                <option value="">All</option>
+                <option value="vegetables">Vegetables and legumes/beans</option>
+                <option value="grain">Grain (cereal) foods</option>
+                <option value="meal">Lean meats and poultry, fish, eggs, tofu, nuts and seeds and legumes/beans</option>
+                <option value="lactose">Milk, yoghurt cheese and/or alternatives</option>
+              </Form.Select>
+            </div>
+          </Col>
+        </Row>
+      </div>
       <h1>Store</h1>
       <Row md={2} xs={1} lg={3} className="g-1">
-        {/* {products.map((item) => {
-          return (
-            <Col key={item.id}>
-              <StoreItem {...item} />
-            </Col>
-          );
-        })} */}
-
-        {renderTable(products)}
+        <Table striped bordered hover>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Name</th>
+              <th onClick={() => sorting('price')}>
+                Price  <span style={{cursor:'pointer'}}>{order === 'desc'?'↑':'↓'}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredList.map((product, item) =>  {
+              const quantity = getItemQuantity(product.id);
+              return (
+                <tr>
+                  <td>{product.category.name}</td>
+                  <td>{product.name}</td>
+                  <td>{product.price}</td>
+                  <td>
+                    <div className="mt-auto">
+                      {quantity === 0 ? (
+                        <Button className="w-100 btn-secondary " onClick={() => increaseCartQuantity(product.id)}>
+                          Add to Cart
+                        </Button>
+                      ) : (
+                        <div className="d-flex align-items-center flex-column " style={{ gap: '.5rem' }}>
+                          <div className="d-flex align-items-center justify-content-center" style={{ gap: '.5rem' }}>
+                            <Button className="btn btn-dark" onClick={() => decreaseCartQuantity(product.id)}>
+                              -
+                            </Button>
+                            <div>
+                              <span className="fs-3">{quantity}</span>
+                              in cart
+                            </div>
+                            <Button className="btn btn-light" onClick={() => increaseCartQuantity(product.id)}>
+                              +
+                            </Button>
+                          </div>
+                          <Button variant="danger" size="sm" onClick={() => removeFromCart(product.id)}>
+                            Remove
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
       </Row>
     </>
   );
